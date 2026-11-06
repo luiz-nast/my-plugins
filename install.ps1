@@ -1,4 +1,4 @@
-# Instala 7 ferramentas do Claude Code (Windows, PowerShell). Pula o que já existe.
+# Instala 6 ferramentas do Claude Code (Windows, PowerShell). Pula o que já existe.
 # AVISO: ponytail tem bug conhecido no Windows (trava cada mensagem por alguns segundos).
 $ErrorActionPreference = 'Stop'
 function Has($c) { [bool](Get-Command $c -ErrorAction SilentlyContinue) }
@@ -20,8 +20,7 @@ if (-not (Has rtk)) { winget install -e --id rtk-ai.rtk --accept-source-agreemen
 rtk init -g --auto-patch
 rtk telemetry disable
 
-# headroom e graphify (uv)
-if (-not (Has headroom)) { uv tool install --python 3.13 "headroom-ai[all]"; headroom mcp install --agent claude }
+# graphify (uv)
 if (-not (Has graphify)) { uv tool install graphifyy; graphify install }
 
 Write-Host 'ok. reabra o terminal e o Claude Code.'

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instala 7 ferramentas do Claude Code (Ubuntu). Pula o que já existe.
+# Instala 6 ferramentas do Claude Code (Ubuntu). Pula o que já existe.
 set -e
 export PATH="$HOME/.local/bin:$PATH"
 has() { command -v "$1" >/dev/null 2>&1; }
@@ -21,8 +21,7 @@ has rtk || curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/ma
 rtk init -g --auto-patch </dev/null
 rtk telemetry disable
 
-# headroom e graphify (pipx)
-has headroom || { pipx install "headroom-ai[all]" && headroom mcp install --agent claude; }
+# graphify (pipx)
 has graphify || { pipx install graphifyy && graphify install; }
 
 echo "ok. reinicie o Claude Code."
