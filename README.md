@@ -18,3 +18,7 @@ Requer o Claude Code (`claude`) já instalado. No Windows usa `winget` e `uv`.
 
 > ⚠️ ponytail tem bug conhecido no Windows: trava cada mensagem por alguns segundos.
 > O `install.ps1` não foi testado (só o `install.sh`).
+
+## Depois de instalar
+- **headroom** só comprime se o Claude for aberto assim (terminal, não o app Desktop): `headroom wrap claude`
+- **context7** pede login uma vez: dentro do Claude Code, `/mcp` → context7 → Authenticate
