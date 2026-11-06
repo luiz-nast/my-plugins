@@ -1,6 +1,6 @@
 # my-plugins
 
-Instala 8 ferramentas de economia de tokens do Claude Code: ponytail, caveman, rtk, headroom, graphify, superpowers, code-review, context7.
+Instala 7 ferramentas de economia de tokens do Claude Code: ponytail, caveman, rtk, headroom, graphify, superpowers, code-review.
 
 Sem perguntas, pula o que já está instalado, telemetria do rtk desligada.
 
@@ -21,4 +21,3 @@ Requer o Claude Code (`claude`) já instalado. No Windows usa `winget` e `uv`.
 
 ## Depois de instalar
 - **headroom** só comprime se o Claude for aberto assim (terminal, não o app Desktop): `headroom wrap claude`
-- **context7** pede login uma vez: dentro do Claude Code, `/mcp` → context7 → Authenticate

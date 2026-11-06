@@ -1,4 +1,4 @@
-# Instala 8 ferramentas do Claude Code (Windows, PowerShell). Pula o que já existe.
+# Instala 7 ferramentas do Claude Code (Windows, PowerShell). Pula o que já existe.
 # AVISO: ponytail tem bug conhecido no Windows (trava cada mensagem por alguns segundos).
 $ErrorActionPreference = 'Stop'
 function Has($c) { [bool](Get-Command $c -ErrorAction SilentlyContinue) }
@@ -13,7 +13,7 @@ claude plugin marketplace add JuliusBrussee/caveman
 claude plugin marketplace add anthropics/claude-plugins-official
 Plug ponytail ponytail
 Plug caveman caveman
-foreach ($p in 'superpowers','code-review','context7') { Plug $p claude-plugins-official }
+foreach ($p in 'superpowers','code-review') { Plug $p claude-plugins-official }
 
 # rtk: winget + hook global, sem perguntas, telemetria off
 if (-not (Has rtk)) { winget install -e --id rtk-ai.rtk --accept-source-agreements --accept-package-agreements }

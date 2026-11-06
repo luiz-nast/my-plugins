@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instala 8 ferramentas do Claude Code (Ubuntu). Pula o que já existe.
+# Instala 7 ferramentas do Claude Code (Ubuntu). Pula o que já existe.
 set -e
 export PATH="$HOME/.local/bin:$PATH"
 has() { command -v "$1" >/dev/null 2>&1; }
@@ -14,7 +14,7 @@ claude plugin marketplace add JuliusBrussee/caveman    2>/dev/null || true
 claude plugin marketplace add anthropics/claude-plugins-official 2>/dev/null || true
 plug ponytail ponytail
 plug caveman caveman
-for p in superpowers code-review context7; do plug $p claude-plugins-official; done
+for p in superpowers code-review; do plug $p claude-plugins-official; done
 
 # rtk: binário + hook global, sem perguntas, telemetria off
 has rtk || curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
