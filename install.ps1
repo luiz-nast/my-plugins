@@ -10,6 +10,7 @@ if (-not (Has uv)) { winget install -e --id astral-sh.uv --accept-source-agreeme
 # plugins de marketplace
 claude plugin marketplace add DietrichGebert/ponytail
 claude plugin marketplace add JuliusBrussee/caveman
+claude plugin marketplace add anthropics/claude-plugins-official
 Plug ponytail ponytail
 Plug caveman caveman
 foreach ($p in 'superpowers','code-review','context7') { Plug $p claude-plugins-official }

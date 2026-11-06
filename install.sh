@@ -11,6 +11,7 @@ has pipx   || { sudo apt install -y pipx && pipx ensurepath; }
 # plugins de marketplace
 claude plugin marketplace add DietrichGebert/ponytail  2>/dev/null || true
 claude plugin marketplace add JuliusBrussee/caveman    2>/dev/null || true
+claude plugin marketplace add anthropics/claude-plugins-official 2>/dev/null || true
 plug ponytail ponytail
 plug caveman caveman
 for p in superpowers code-review context7; do plug $p claude-plugins-official; done
