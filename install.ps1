@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8; $OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 
 $N = 7
+$settings = "$env:USERPROFILE\.claude\settings.json"
 $OK = [Collections.Generic.List[string]]::new()
 $SKIP = [Collections.Generic.List[string]]::new()
 $FAIL = [Collections.Generic.List[string]]::new()
@@ -71,6 +72,26 @@ function Install-Plugin($i, $name, $market, $repo) {
   Invoke-Step $i $name { Test-Plugin $id } { Add-Market $market $repo; Run claude plugin install $id }
 }
 
+function Test-Rtk { (Has rtk) -and (Test-Path $settings) -and ((Get-Content $settings -Raw) -match 'rtk(\.exe)? hook') }
+
+# Cópia com data e hora: settings.json.bak pode já existir com outra origem.
+function Backup-Settings {
+  if (-not (Test-Path $settings)) { Write-Host '  settings.json não existe, nada a copiar'; return }
+  $backup = "$settings.bak-$(Get-Date -Format yyyyMMdd-HHmmss)"
+  Copy-Item $settings $backup
+  Write-Host "  backup: $backup"
+}
+
+function Install-Rtk {
+  if (-not (Has rtk)) {
+    Run winget install -e --id rtk-ai.rtk --accept-source-agreements --accept-package-agreements
+    Update-Path
+  }
+  Backup-Settings
+  Run rtk init -g --auto-patch
+  Run rtk telemetry disable
+}
+
 Write-Host 'my-plugins: 6 ferramentas de economia de tokens para o Claude Code'
 Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify' -join " $([char]0x00B7) "))
 
@@ -92,4 +113,7 @@ if ($ponytail) { Install-Plugin 2 ponytail ponytail DietrichGebert/ponytail } el
 Install-Plugin 3 caveman caveman JuliusBrussee/caveman
 Install-Plugin 4 superpowers claude-plugins-official anthropics/claude-plugins-official
 Install-Plugin 5 code-review claude-plugins-official anthropics/claude-plugins-official
+
+Invoke-Step 6 rtk { Test-Rtk } { Install-Rtk }
+if ($SKIP.Contains('rtk')) { $null = rtk telemetry disable }
 }
