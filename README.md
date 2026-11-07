@@ -3,18 +3,19 @@
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-suportado-E95420?logo=ubuntu&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-suportado-0078D6?logo=windows&logoColor=white)
 
-Um comando instala 6 ferramentas que economizam tokens no Claude Code.
+Um comando instala 7 ferramentas que economizam tokens no Claude Code.
 Pula o que já está instalado e desliga a telemetria do rtk.
 
 ## Como usar
 
-![Como usar os 6 plugins](docs/img/como-usar.png)
+![Como usar os 7 plugins](docs/img/como-usar.png)
 
 **Já trabalham sozinhos** (não precisa fazer nada):
 * **rtk**: comando mais especial `rtk gain` (no terminal), que mostra quanto já economizou.
 * **caveman**: comando mais especial `/caveman ultra`, que deixa as respostas ainda mais curtas. Para desligar, escreva `stop caveman`.
 * **ponytail**: comando mais especial `/ponytail-review`, que revisa uma mudança. Para desligar, escreva `stop ponytail`.
 * **superpowers**: puxa sozinho as skills de planejar, testar e depurar. Comando mais especial `/superpowers:brainstorming`, para planejar uma ideia antes de codar.
+* **ux-design**: o Claude puxa sozinho a skill certa quando o assunto é tela, usabilidade ou design. Comando mais especial `/ux-design:ux-heuristics`, que faz uma auditoria de usabilidade (Krug + as 10 heurísticas de Nielsen).
 
 **Você precisa chamar:**
 * **code-review**: comando mais especial `/code-review:code-review`.
@@ -44,6 +45,9 @@ Pula o que já está instalado e desliga a telemetria do rtk.
 **graphify**: skill `/graphify` que transforma uma pasta (código, docs, PDFs) num grafo de conhecimento consultável.
 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) (pacote PyPI `graphifyy`)
 
+**ux-design**: 11 skills de UX e UI baseadas em livros (Refactoring UI, iOS HIG, Don Norman, Hooked), incluindo a UX Heuristics (Krug + 10 heurísticas de Nielsen).
+[wondelai/skills](https://github.com/wondelai/skills)
+
 ## Resumo
 
 | Nome | O que faz | Como instala / origem |
@@ -54,6 +58,7 @@ Pula o que já está instalado e desliga a telemetria do rtk.
 | code-review | revisão de PR | plugin `code-review@claude-plugins-official` |
 | rtk | comprime saída de comandos | Ubuntu: script oficial; Windows: `winget` (`rtk-ai.rtk`) |
 | graphify | grafo de conhecimento | Ubuntu: `pipx install graphifyy`; Windows: `uv tool install graphifyy` |
+| ux-design | skills de UX e usabilidade | plugin `ux-design@wondelai-skills` (marketplace wondelai/skills) |
 
 ## Instalação
 
@@ -88,6 +93,7 @@ Se ainda faltar, ele para sem mudar nada.
 5. **code-review**
 6. **rtk**: instala, faz backup do `settings.json`, liga o hook global e desliga a telemetria.
 7. **graphify**: instala e roda `graphify install`.
+8. **ux-design**
 
 Cada etapa mostra uma barra de progresso e um status: `✔` ok, `↷` já instalado/pulado, `✖` erro.
 Uma falha não interrompe as outras etapas. No fim aparece um resumo.
@@ -130,8 +136,10 @@ claude plugin uninstall ponytail@ponytail
 claude plugin uninstall caveman@caveman
 claude plugin uninstall superpowers@claude-plugins-official
 claude plugin uninstall code-review@claude-plugins-official
+claude plugin uninstall ux-design@wondelai-skills
 claude plugin marketplace remove ponytail
 claude plugin marketplace remove caveman
+claude plugin marketplace remove wondelai-skills
 ```
 Opcional: `claude plugin marketplace remove claude-plugins-official`.
 Cuidado: outros plugins seus podem usar esse marketplace.
