@@ -1,4 +1,4 @@
-# my-plugins: instala 6 ferramentas de economia de tokens no Claude Code (Windows PowerShell 5.1 e 7).
+# my-plugins: instala 7 ferramentas de economia de tokens no Claude Code (Windows PowerShell 5.1 e 7).
 # Uso: irm https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.ps1 | iex
 # Pode rodar de novo: o que já está instalado é pulado.
 # Tudo dentro de & { }: sob iex, um exit fecharia a janela do usuário.
@@ -6,7 +6,7 @@
 $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8; $OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 
-$N = 7
+$N = 8
 $settings = "$env:USERPROFILE\.claude\settings.json"
 $OK = [Collections.Generic.List[string]]::new()
 $SKIP = [Collections.Generic.List[string]]::new()
@@ -108,8 +108,8 @@ function Show-Summary {
   Write-Status warn 'Reinicie o Claude Code (feche e abra de novo) e reabra o terminal para carregar plugins e o hook do rtk.'
 }
 
-Write-Host 'my-plugins: 6 ferramentas de economia de tokens para o Claude Code'
-Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify' -join " $([char]0x00B7) "))
+Write-Host 'my-plugins: 7 ferramentas de economia de tokens para o Claude Code'
+Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify', '8 ux-design' -join " $([char]0x00B7) "))
 
 Show-Bar 1 'Pré-requisitos'
 if (-not (Need claude 'o Claude Code' 'irm https://claude.ai/install.ps1 | iex')) { return }
@@ -133,6 +133,7 @@ Install-Plugin 5 code-review claude-plugins-official anthropics/claude-plugins-o
 Invoke-Step 6 rtk { Test-Rtk } { Install-Rtk }
 if ($SKIP.Contains('rtk')) { $null = rtk telemetry disable }
 Invoke-Step 7 graphify { Test-Graphify } { Install-Graphify }
+Install-Plugin 8 ux-design wondelai-skills wondelai/skills
 
 Show-Summary
 }
