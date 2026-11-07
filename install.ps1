@@ -53,6 +53,24 @@ function Need($cmd, $what, $how) {
 
 function Test-Plugin($id) { (claude plugin list --json | Out-String).Contains("`"$id`"") }
 
+function Add-Market($name, $repo) {
+  if (-not (claude plugin marketplace list --json | Out-String).Contains("`"$name`"")) { Run claude plugin marketplace add $repo }
+}
+
+# Uma etapa: pula se $check passa; senão instala. Erro numa ferramenta é anotado e o script segue.
+function Invoke-Step($i, $name, $check, $install) {
+  Show-Bar $i $name
+  if (& $check) { Write-Status skip "$name já instalado"; $SKIP.Add($name); return }
+  Write-Status wait "instalando $name..."
+  try { & $install; Write-Status ok "$name ok"; $OK.Add($name) }
+  catch { Write-Host "  $_"; Write-Status fail "$name erro (veja a saída acima)"; $FAIL.Add($name) }
+}
+
+function Install-Plugin($i, $name, $market, $repo) {
+  $id = "$name@$market"
+  Invoke-Step $i $name { Test-Plugin $id } { Add-Market $market $repo; Run claude plugin install $id }
+}
+
 Write-Host 'my-plugins: 6 ferramentas de economia de tokens para o Claude Code'
 Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify' -join " $([char]0x00B7) "))
 
@@ -67,4 +85,11 @@ if (-not $ponytail) {
   if ($null -eq $answer) { Write-Host '    sem terminal interativo: ponytail pulado' }
   $ponytail = $answer -match '^s'
 }
+
+if ($ponytail) { Install-Plugin 2 ponytail ponytail DietrichGebert/ponytail } else {
+  Show-Bar 2 ponytail; Write-Status skip 'ponytail pulado (escolha do usuário)'; $SKIP.Add('ponytail')
+}
+Install-Plugin 3 caveman caveman JuliusBrussee/caveman
+Install-Plugin 4 superpowers claude-plugins-official anthropics/claude-plugins-official
+Install-Plugin 5 code-review claude-plugins-official anthropics/claude-plugins-official
 }
