@@ -25,3 +25,51 @@ Pula o que já está instalado e desliga a telemetria do rtk.
 
 **graphify**: skill `/graphify` que transforma uma pasta (código, docs, PDFs) num grafo de conhecimento consultável.
 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) (pacote PyPI `graphifyy`)
+
+## Resumo
+
+| Nome | O que faz | Como instala / origem |
+|---|---|---|
+| ponytail | código mínimo | plugin `ponytail@ponytail` (marketplace DietrichGebert/ponytail) |
+| caveman | respostas curtas | plugin `caveman@caveman` (marketplace JuliusBrussee/caveman) |
+| superpowers | método de desenvolvimento | plugin `superpowers@claude-plugins-official` |
+| code-review | revisão de PR | plugin `code-review@claude-plugins-official` |
+| rtk | comprime saída de comandos | Ubuntu: script oficial; Windows: `winget` (`rtk-ai.rtk`) |
+| graphify | grafo de conhecimento | Ubuntu: `pipx install graphifyy`; Windows: `uv tool install graphifyy` |
+
+## Instalação
+
+**Ubuntu**
+```bash
+curl -fsSL https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.sh | bash
+```
+
+**Windows (PowerShell)**
+```powershell
+irm https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.ps1 | iex
+```
+
+### Requisitos
+
+| Ubuntu | Windows |
+|---|---|
+| Claude Code (`claude`) | Claude Code (`claude`) |
+| `curl` | `winget` (App Installer, Microsoft Store) |
+| `git` | `uv` (`winget install -e --id astral-sh.uv`) |
+| `pipx` (`sudo apt install -y pipx && pipx ensurepath`) | |
+
+Se faltar algo, o script mostra como instalar e espera você apertar Enter.
+Se ainda faltar, ele para sem mudar nada.
+
+### Etapas
+
+1. **Pré-requisitos**: confere os requisitos acima (no Windows, pergunta sobre o ponytail).
+2. **ponytail**
+3. **caveman**
+4. **superpowers**
+5. **code-review**
+6. **rtk**: instala, faz backup do `settings.json`, liga o hook global e desliga a telemetria.
+7. **graphify**: instala e roda `graphify install`.
+
+Cada etapa mostra uma barra de progresso e um status: `✔` ok, `↷` já instalado/pulado, `✖` erro.
+Uma falha não interrompe as outras etapas. No fim aparece um resumo.
