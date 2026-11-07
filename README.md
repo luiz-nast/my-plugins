@@ -74,6 +74,24 @@ Se ainda faltar, ele para sem mudar nada.
 Cada etapa mostra uma barra de progresso e um status: `✔` ok, `↷` já instalado/pulado, `✖` erro.
 Uma falha não interrompe as outras etapas. No fim aparece um resumo.
 
+## Como fica
+
+Prints reais do `install.sh` no Ubuntu.
+
+**Máquina nova** (a saída de cada instalador foi omitida, ficam só as linhas do script):
+
+![Instalação numa máquina nova](docs/img/install-fresh.png)
+
+**Rodando de novo** (pula o que já está instalado):
+
+![Tudo já instalado](docs/img/install-skip.png)
+
+**Falta um pré-requisito** (explica, espera o Enter e para sem mudar nada):
+
+![Falta pipx](docs/img/install-missing.png)
+
+O `install.ps1` mostra as mesmas etapas e status no Windows; ainda não há print dele.
+
 ## O que muda na máquina
 
 - `~/.claude/settings.json`: hook global `PreToolUse` do rtk.
