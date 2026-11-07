@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# my-plugins: instala 6 ferramentas de economia de tokens no Claude Code (Ubuntu).
+# my-plugins: instala 7 ferramentas de economia de tokens no Claude Code (Ubuntu).
 # Uso: curl -fsSL <url>/install.sh | bash   (pode rodar de novo: pula o que já existe)
 set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
 
-N=7
+N=8
 OK=() SKIP=() FAIL=()
 PL=""  # cache de `claude plugin list --json` (grep -q num pipe quebra com pipefail)
 
@@ -97,8 +97,8 @@ summary() {
 }
 
 main() {
-  echo "my-plugins: 6 ferramentas de economia de tokens para o Claude Code"
-  echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify"
+  echo "my-plugins: 7 ferramentas de economia de tokens para o Claude Code"
+  echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify · 8 ux-design"
 
   bar 1 "Pré-requisitos"
   need claude "o Claude Code (CLI)" "curl -fsSL https://claude.ai/install.sh | bash"
@@ -119,6 +119,7 @@ main() {
   if has rtk; then rtk telemetry disable </dev/null >/dev/null 2>&1 || true; fi
 
   run_step 7 graphify graphify_ok graphify_install
+  run_step 8 ux-design   "plugin_installed ux-design@wondelai-skills" "add_plugin wondelai-skills wondelai/skills ux-design@wondelai-skills"
   summary
   (( ${#FAIL[@]} == 0 )) || exit 1
 }
