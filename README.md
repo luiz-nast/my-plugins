@@ -77,7 +77,7 @@ Uma falha não interrompe as outras etapas. No fim aparece um resumo.
 ## O que muda na máquina
 
 - `~/.claude/settings.json`: hook global `PreToolUse` do rtk.
-- `~/.claude/settings.json.bak-AAAAmmdd-HHMMSS`: backup feito logo antes do `rtk init`.
+- `~/.claude/settings.json.bak-AAAAMMDD-HHMMSS`: backup feito logo antes do `rtk init`.
 - `~/.claude/RTK.md` e a linha `@RTK.md` no `~/.claude/CLAUDE.md`.
 - `~/.claude/skills/graphify/` e um bloco do graphify no `~/.claude/CLAUDE.md`.
 - `~/.claude/plugins/`: plugins e marketplaces.
@@ -126,3 +126,20 @@ uv tool uninstall graphifyy
 
 Opcional: restaurar o backup `settings.json.bak-*` por cima do `settings.json`.
 Isso descarta qualquer mudança feita no `settings.json` depois do backup.
+
+## Avisos
+
+- **ponytail no Windows**: tem bug conhecido, trava cada mensagem por alguns segundos.
+  Por isso o `install.ps1` pergunta antes, e o padrão é **N** (não instala).
+  Sem terminal interativo, ele pula o ponytail.
+  Para instalar depois, manualmente:
+  ```powershell
+  claude plugin install ponytail@ponytail
+  ```
+- **Símbolos como quadrados** (`✔ ✖ ↷ ⏳ █`): o console antigo do Windows (conhost) não desenha esses caracteres. Use o Windows Terminal.
+- **Reinicie o Claude Code** (feche e abra de novo) depois de instalar, para carregar os plugins e o hook do rtk. No Windows, reabra também o terminal.
+
+## Status
+
+- **Ubuntu**: testado.
+- **Windows**: a versão anterior foi testada e funcionou; o novo `install.ps1` ainda não foi testado. Testes pendentes.
