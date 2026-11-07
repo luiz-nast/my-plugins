@@ -6,6 +6,24 @@
 Um comando instala 6 ferramentas que economizam tokens no Claude Code.
 Pula o que já está instalado e desliga a telemetria do rtk.
 
+## Como usar
+
+![Como usar os 6 plugins](docs/img/como-usar.png)
+
+**Já trabalham sozinhos** (não precisa fazer nada):
+* **rtk**: comando mais especial `rtk gain` (no terminal), que mostra quanto já economizou.
+* **caveman**: comando mais especial `/caveman ultra`, que deixa as respostas ainda mais curtas. Para desligar, escreva `stop caveman`.
+* **ponytail**: comando mais especial `/ponytail-review`, que revisa uma mudança. Para desligar, escreva `stop ponytail`.
+* **superpowers**: puxa sozinho as skills de planejar, testar e depurar. Comando mais especial `/superpowers:brainstorming`, para planejar uma ideia antes de codar.
+
+**Você precisa chamar:**
+* **code-review**: comando mais especial `/code-review:code-review`.
+  Use dentro do repo, na branch de um pull request aberto no GitHub (precisa do `gh` logado).
+  Com `--comment` no fim, a revisão vira comentário no PR.
+  Atenção: `/code-review` sozinho é o revisor que já vem no Claude Code (revisa o diff local), não este plugin.
+* **graphify**: comando mais especial `/graphify .`, que monta o mapa da pasta atual.
+  Só precisa chamar na primeira vez. Depois disso, o Claude consulta o mapa sozinho.
+
 ## Plugins
 
 **ponytail**: faz o agente agir como um dev sênior preguiçoso, que escreve o mínimo de código que resolve.
