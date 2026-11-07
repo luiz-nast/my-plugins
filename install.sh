@@ -1,27 +1,34 @@
 #!/usr/bin/env bash
-# Instala 6 ferramentas do Claude Code (Ubuntu). Pula o que já existe.
-set -e
+# my-plugins: instala 6 ferramentas de economia de tokens no Claude Code (Ubuntu).
+# Uso: curl -fsSL <url>/install.sh | bash   (pode rodar de novo: pula o que já existe)
+set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
+
+N=7
+OK=() SKIP=() FAIL=()
+
 has() { command -v "$1" >/dev/null 2>&1; }
-plug() { claude plugin list 2>/dev/null | grep -q "$1@" || claude plugin install "$1@$2"; }
 
-has claude || { echo "instale o Claude Code antes"; exit 1; }
-has pipx   || { sudo apt install -y pipx && pipx ensurepath; }
+bar() {  # bar i nome
+  local cheio vazio
+  printf -v cheio '%*s' $(( $1 * 20 / N )) ''
+  printf -v vazio '%*s' $(( 20 - $1 * 20 / N )) ''
+  printf '\n[%s%s] Etapa %s/%s  %s\n' "${cheio// /█}" "${vazio// /░}" "$1" "$N" "$2"
+}
 
-# plugins de marketplace
-claude plugin marketplace add DietrichGebert/ponytail  2>/dev/null || true
-claude plugin marketplace add JuliusBrussee/caveman    2>/dev/null || true
-claude plugin marketplace add anthropics/claude-plugins-official 2>/dev/null || true
-plug ponytail ponytail
-plug caveman caveman
-for p in superpowers code-review; do plug $p claude-plugins-official; done
+status() {  # status run|ok|skip|fail nome
+  case $1 in
+    run)  echo "  ⏳ instalando $2..." ;;
+    ok)   echo "  ✔ $2 ok" ;;
+    skip) echo "  ↷ $2 já instalado" ;;
+    fail) echo "  ✖ $2 erro (veja a saída acima)" ;;
+  esac
+}
 
-# rtk: binário + hook global, sem perguntas, telemetria off
-has rtk || curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
-rtk init -g --auto-patch </dev/null
-rtk telemetry disable
+main() {
+  echo "my-plugins: 6 ferramentas de economia de tokens para o Claude Code"
+  echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify"
+}
 
-# graphify (pipx)
-has graphify || { pipx install graphifyy && graphify install; }
-
-echo "ok. reinicie o Claude Code."
+# main no fim: um download parcial via curl | bash não executa nada
+main "$@"
