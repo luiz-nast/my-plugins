@@ -73,3 +73,56 @@ Se ainda faltar, ele para sem mudar nada.
 
 Cada etapa mostra uma barra de progresso e um status: `✔` ok, `↷` já instalado/pulado, `✖` erro.
 Uma falha não interrompe as outras etapas. No fim aparece um resumo.
+
+## O que muda na máquina
+
+- `~/.claude/settings.json`: hook global `PreToolUse` do rtk.
+- `~/.claude/settings.json.bak-AAAAmmdd-HHMMSS`: backup feito logo antes do `rtk init`.
+- `~/.claude/RTK.md` e a linha `@RTK.md` no `~/.claude/CLAUDE.md`.
+- `~/.claude/skills/graphify/` e um bloco do graphify no `~/.claude/CLAUDE.md`.
+- `~/.claude/plugins/`: plugins e marketplaces.
+- Binários: Ubuntu em `~/.local/bin` (rtk; graphify via pipx). Windows: links do winget e `%USERPROFILE%\.local\bin`.
+- Telemetria do rtk desligada (`rtk telemetry disable`).
+
+No Windows, `~` é `%USERPROFILE%`.
+
+## Desinstalar
+
+**Plugins** (Ubuntu e Windows):
+```bash
+claude plugin uninstall ponytail@ponytail
+claude plugin uninstall caveman@caveman
+claude plugin uninstall superpowers@claude-plugins-official
+claude plugin uninstall code-review@claude-plugins-official
+claude plugin marketplace remove ponytail
+claude plugin marketplace remove caveman
+```
+Opcional: `claude plugin marketplace remove claude-plugins-official`.
+Cuidado: outros plugins seus podem usar esse marketplace.
+
+**rtk** (opcional antes: `rtk telemetry forget`):
+```bash
+# Ubuntu
+rtk init -g --uninstall
+rm -f "$(command -v rtk)"
+```
+```powershell
+# Windows
+rtk init -g --uninstall
+winget uninstall -e --id rtk-ai.rtk
+```
+
+**graphify**:
+```bash
+# Ubuntu
+graphify uninstall
+pipx uninstall graphifyy
+```
+```powershell
+# Windows
+graphify uninstall
+uv tool uninstall graphifyy
+```
+
+Opcional: restaurar o backup `settings.json.bak-*` por cima do `settings.json`.
+Isso descarta qualquer mudança feita no `settings.json` depois do backup.
