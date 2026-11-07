@@ -75,6 +75,27 @@ rtk_install() {
   rtk init -g --auto-patch
 }
 
+graphify_ok() { has graphify && [[ -f $HOME/.claude/skills/graphify/SKILL.md ]]; }
+graphify_install() {
+  if ! has graphify; then pipx install graphifyy; hash -r; fi
+  graphify install
+}
+
+line() {  # line "rótulo" itens...: só imprime se houver itens
+  (( $# > 1 )) || return 0
+  local s; printf -v s '%s, ' "${@:2}"
+  echo "  $1 ${s%, }"
+}
+
+summary() {
+  echo
+  echo "Resumo: ${#OK[@]} instalados, ${#SKIP[@]} pulados, ${#FAIL[@]} falhas"
+  line "✔ instalados:" "${OK[@]}"
+  line "↷ pulados:" "${SKIP[@]}"
+  line "✖ falhas:" "${FAIL[@]}"
+  echo "⚠ Reinicie o Claude Code (feche e abra de novo) para carregar plugins e o hook do rtk."
+}
+
 main() {
   echo "my-plugins: 6 ferramentas de economia de tokens para o Claude Code"
   echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify"
@@ -96,6 +117,10 @@ main() {
   run_step 6 rtk rtk_ok rtk_install
   # telemetria off mesmo quando o rtk já existia
   if has rtk; then rtk telemetry disable </dev/null >/dev/null 2>&1 || true; fi
+
+  run_step 7 graphify graphify_ok graphify_install
+  summary
+  (( ${#FAIL[@]} == 0 )) || exit 1
 }
 
 # main no fim: um download parcial via curl | bash não executa nada
