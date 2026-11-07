@@ -32,6 +32,39 @@ function Write-Status($kind, $text) {
   Write-Host "  $([char]$icon) $text"
 }
 
+# Lê uma linha do usuário. Sem terminal interativo devolve $null (Read-Host lança erro nesse caso).
+function Read-Line($prompt) {
+  if ([Console]::IsInputRedirected) { return $null }
+  Write-Host -NoNewline $prompt
+  try { Read-Host } catch { $null }
+}
+
+# Pré-requisito: explica o que falta, espera o usuário instalar e confere de novo.
+function Need($cmd, $what, $how) {
+  if (-not (Has $cmd)) {
+    Write-Status warn "$cmd não encontrado: $what"
+    Write-Host "    Como instalar: $how"
+    if ($null -ne (Read-Line '    Instale em outro terminal e pressione Enter para continuar...')) { Update-Path }
+  }
+  if (Has $cmd) { Write-Status ok "$cmd ok"; return $true }
+  Write-Status fail "$cmd não encontrado. Instale e rode o script de novo."
+  $false
+}
+
+function Test-Plugin($id) { (claude plugin list --json | Out-String).Contains("`"$id`"") }
+
 Write-Host 'my-plugins: 6 ferramentas de economia de tokens para o Claude Code'
 Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify' -join " $([char]0x00B7) "))
+
+Show-Bar 1 'Pré-requisitos'
+if (-not (Need claude 'o Claude Code' 'irm https://claude.ai/install.ps1 | iex')) { return }
+if (-not (Need winget 'o gerenciador de pacotes do Windows' 'instale o "App Installer" da Microsoft Store')) { return }
+if (-not (Need uv 'o gerenciador Python que instala o graphify' 'winget install -e --id astral-sh.uv')) { return }
+
+$ponytail = Test-Plugin 'ponytail@ponytail'
+if (-not $ponytail) {
+  $answer = Read-Line "  $([char]0x26A0) ponytail tem bug conhecido no Windows: trava cada mensagem por alguns segundos. Instalar mesmo assim? [s/N] "
+  if ($null -eq $answer) { Write-Host '    sem terminal interativo: ponytail pulado' }
+  $ponytail = $answer -match '^s'
+}
 }
