@@ -1,26 +1,37 @@
-# Instala 6 ferramentas do Claude Code (Windows, PowerShell). Pula o que já existe.
-# AVISO: ponytail tem bug conhecido no Windows (trava cada mensagem por alguns segundos).
+# my-plugins: instala 6 ferramentas de economia de tokens no Claude Code (Windows PowerShell 5.1 e 7).
+# Uso: irm https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.ps1 | iex
+# Pode rodar de novo: o que já está instalado é pulado.
+# Tudo dentro de & { }: sob iex, um exit fecharia a janela do usuário.
+& {
 $ErrorActionPreference = 'Stop'
-function Has($c) { [bool](Get-Command $c -ErrorAction SilentlyContinue) }
-function Plug($p, $m) { if (-not ((claude plugin list) -match "$p@")) { claude plugin install "$p@$m" } }
+try { [Console]::OutputEncoding = [Text.Encoding]::UTF8; $OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 
-if (-not (Has claude)) { throw 'instale o Claude Code antes' }
-if (-not (Has uv)) { winget install -e --id astral-sh.uv --accept-source-agreements --accept-package-agreements; $env:Path += ";$env:USERPROFILE\.local\bin" }
+$N = 7
+$OK = [Collections.Generic.List[string]]::new()
+$SKIP = [Collections.Generic.List[string]]::new()
+$FAIL = [Collections.Generic.List[string]]::new()
 
-# plugins de marketplace
-claude plugin marketplace add DietrichGebert/ponytail
-claude plugin marketplace add JuliusBrussee/caveman
-claude plugin marketplace add anthropics/claude-plugins-official
-Plug ponytail ponytail
-Plug caveman caveman
-foreach ($p in 'superpowers','code-review') { Plug $p claude-plugins-official }
+function Has($cmd) { [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
 
-# rtk: winget + hook global, sem perguntas, telemetria off
-if (-not (Has rtk)) { winget install -e --id rtk-ai.rtk --accept-source-agreements --accept-package-agreements }
-rtk init -g --auto-patch
-rtk telemetry disable
+# Comando nativo não lança erro sozinho: confere o código de saída. Nunca redirecionar stderr (lança no PS 5.1).
+function Run { & $args[0] $args[1..($args.Count - 1)]; if ($LASTEXITCODE) { throw "$args falhou (código $LASTEXITCODE)" } }
 
-# graphify (uv)
-if (-not (Has graphify)) { uv tool install graphifyy; graphify install }
+# Recarrega o PATH depois de instalar algo (winget e uv não atualizam o terminal aberto).
+function Update-Path {
+  $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User') + ";$env:USERPROFILE\.local\bin"
+}
 
-Write-Host 'ok. reabra o terminal e o Claude Code.'
+function Show-Bar($i, $name) {
+  $full = [int][math]::Floor($i * 20 / $N)
+  Write-Host ''
+  Write-Host ('[' + ([string][char]0x2588) * $full + ([string][char]0x2591) * (20 - $full) + "] Etapa $i/$N  $name")
+}
+
+function Write-Status($kind, $text) {
+  $icon = @{ wait = 0x23F3; ok = 0x2714; skip = 0x21B7; fail = 0x2716; warn = 0x26A0 }[$kind]
+  Write-Host "  $([char]$icon) $text"
+}
+
+Write-Host 'my-plugins: 6 ferramentas de economia de tokens para o Claude Code'
+Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify' -join " $([char]0x00B7) "))
+}
