@@ -58,6 +58,23 @@ run_step() {  # run_step i nome "check" "install" (comandos com argumentos, sem 
   refresh
 }
 
+backup() {  # cópia com data: já pode existir um settings.json.bak de outra origem
+  local f="$HOME/.claude/settings.json"
+  if [[ -f $f ]]; then
+    local b; b="$f.bak-$(date +%Y%m%d-%H%M%S)"
+    cp "$f" "$b" && echo "  backup: $b"
+  else
+    echo "  settings.json não existe, nada a copiar"
+  fi
+}
+
+rtk_ok() { has rtk && grep -qs "rtk hook" "$HOME/.claude/settings.json"; }
+rtk_install() {
+  if ! has rtk; then curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh; hash -r; fi
+  backup
+  rtk init -g --auto-patch
+}
+
 main() {
   echo "my-plugins: 6 ferramentas de economia de tokens para o Claude Code"
   echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify"
@@ -75,6 +92,10 @@ main() {
   run_step 3 caveman     "plugin_installed caveman@caveman"   "add_plugin caveman JuliusBrussee/caveman caveman@caveman"
   run_step 4 superpowers "plugin_installed superpowers@claude-plugins-official" "add_plugin $official superpowers@claude-plugins-official"
   run_step 5 code-review "plugin_installed code-review@claude-plugins-official" "add_plugin $official code-review@claude-plugins-official"
+
+  run_step 6 rtk rtk_ok rtk_install
+  # telemetria off mesmo quando o rtk já existia
+  if has rtk; then rtk telemetry disable </dev/null >/dev/null 2>&1 || true; fi
 }
 
 # main no fim: um download parcial via curl | bash não executa nada
