@@ -92,6 +92,22 @@ function Install-Rtk {
   Run rtk telemetry disable
 }
 
+function Test-Graphify { (Has graphify) -and (Test-Path "$env:USERPROFILE\.claude\skills\graphify\SKILL.md") }
+
+function Install-Graphify {
+  if (-not (Has graphify)) { Run uv tool install graphifyy; Update-Path }
+  Run graphify install
+}
+
+function Show-Summary {
+  Write-Host ''
+  Write-Host "Resumo: $($OK.Count) instalados, $($SKIP.Count) pulados, $($FAIL.Count) falhas"
+  if ($OK.Count) { Write-Status ok "instalados: $($OK -join ', ')" }
+  if ($SKIP.Count) { Write-Status skip "pulados: $($SKIP -join ', ')" }
+  if ($FAIL.Count) { Write-Status fail "falhas: $($FAIL -join ', ')" }
+  Write-Status warn 'Reinicie o Claude Code (feche e abra de novo) e reabra o terminal para carregar plugins e o hook do rtk.'
+}
+
 Write-Host 'my-plugins: 6 ferramentas de economia de tokens para o Claude Code'
 Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify' -join " $([char]0x00B7) "))
 
@@ -116,4 +132,7 @@ Install-Plugin 5 code-review claude-plugins-official anthropics/claude-plugins-o
 
 Invoke-Step 6 rtk { Test-Rtk } { Install-Rtk }
 if ($SKIP.Contains('rtk')) { $null = rtk telemetry disable }
+Invoke-Step 7 graphify { Test-Graphify } { Install-Graphify }
+
+Show-Summary
 }
