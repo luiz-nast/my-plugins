@@ -4,9 +4,11 @@
 # Tudo dentro de & { }: sob iex, um exit fecharia a janela do usuário.
 & {
 $ErrorActionPreference = 'Stop'
-try { [Console]::OutputEncoding = [Text.Encoding]::UTF8; $OutputEncoding = [Text.Encoding]::UTF8 } catch {}
+# $OutputEncoding é a codificação do que vai por pipe para programas nativos (node -): UTF-8 sem BOM
+try { $OutputEncoding = [Text.UTF8Encoding]::new($false) } catch {}
+try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 
-$N = 10
+$N = 11
 $settings = "$env:USERPROFILE\.claude\settings.json"
 $OK = [Collections.Generic.List[string]]::new()
 $SKIP = [Collections.Generic.List[string]]::new()
@@ -54,9 +56,9 @@ function Need($cmd, $what, $how) {
 
 function Test-Plugin($id) { (claude plugin list --json | Out-String).Contains("`"$id`"") }
 
-function Add-Market($name, $repo) {
-  if (-not (claude plugin marketplace list --json | Out-String).Contains("`"$name`"")) { Run claude plugin marketplace add $repo }
-}
+function Test-Market($name) { (claude plugin marketplace list --json | Out-String).Contains("`"$name`"") }
+
+function Add-Market($name, $repo) { if (-not (Test-Market $name)) { Run claude plugin marketplace add $repo } }
 
 # Uma etapa: pula se $check passa; senão instala. Erro numa ferramenta é anotado e o script segue.
 function Invoke-Step($i, $name, $check, $install) {
@@ -89,7 +91,6 @@ function Install-Rtk {
   }
   Backup-Settings
   Run rtk init -g --auto-patch
-  Run rtk telemetry disable
 }
 
 function Test-Graphify { (Has graphify) -and (Test-Path "$env:USERPROFILE\.claude\skills\graphify\SKILL.md") }
@@ -104,11 +105,11 @@ function Install-Graphify {
 function Install-HallmarkHook {
   $f = "$env:USERPROFILE\.claude\plugins\installed_plugins.json"
   $entry = $null
-  if (Test-Path $f) { $entry = (Get-Content $f -Raw | ConvertFrom-Json).plugins.'hallmark@hallmark' }
+  if (Test-Path $f) { $entry = (Get-Content $f -Raw -Encoding UTF8 | ConvertFrom-Json).plugins.'hallmark@hallmark' }
   if (-not $entry) { Write-Status warn 'hallmark não instalado: hook de edição pulado'; return }
   $dir = @($entry)[0].installPath
   Run node (Join-Path $dir 'hallmark\scripts\install-hook.mjs') --global
-  Write-Status ok 'hook de edição do Hallmark'
+  Write-Status ok 'hook do Hallmark atualizado'
   # opcional: só a checagem renderizada do Hallmark usa o puppeteer-core
   try {
     if (Test-Path (Join-Path (npm root -g) 'puppeteer-core')) { Write-Status skip 'puppeteer-core já estava' } else {
@@ -133,6 +134,86 @@ function Install-Playwright {
   Run playwright-cli install --skills --global
 }
 
+# JS em ASCII puro (acentos em \u escapes), igual ao do install.sh. Os terminadores '@ ficam na coluna 0.
+$ajustesJs = @'
+const fs = require('fs'), path = require('path'), home = require('os').homedir();
+const d = new Date(), z = n => String(n).padStart(2, '0');
+const stamp = '' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '-' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds());
+const cav = process.platform === 'win32' ? path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'caveman') : path.join(home, '.config', 'caveman');
+
+function edit(file, label, fn) {  // JSON: so grava (com backup) se mudou
+  const had = fs.existsSync(file);
+  const obj = had ? JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\ufeff/, '')) : {};
+  const antes = JSON.stringify(obj);
+  fn(obj);
+  if (JSON.stringify(obj) === antes) return console.log('  \u21b7 ' + label + ' j\u00e1 estava');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  if (had) fs.copyFileSync(file, file + '.bak-' + stamp);
+  fs.writeFileSync(file, JSON.stringify(obj, null, 2) + '\n');
+  console.log('  \u2714 ' + label);
+}
+
+edit(path.join(cav, 'config.json'), 'caveman sem refor\u00e7o', c => { c.reinforce = false; });
+edit(path.join(home, '.claude', 'settings.json'), 'autoUpdate nos marketplaces', s => {
+  for (const m of ['ponytail', 'caveman', 'hallmark', 'superpowers-marketplace'])
+    if (s.extraKnownMarketplaces && s.extraKnownMarketplaces[m]) s.extraKnownMarketplaces[m].autoUpdate = true;
+  s.env = s.env || {};
+  s.env.FORCE_AUTOUPDATE_PLUGINS = '1';  // o app desktop liga DISABLE_AUTOUPDATER=1, que pularia o auto-update dos plugins
+});
+
+const md = path.join(home, '.claude', 'CLAUDE.md');
+const linha = 'Design: o Hallmark \u00e9 o \u00fanico l\u00edder visual (temas prontos); o design-better cuida da UX (heur\u00edsticas numeradas e Laws of UX); n\u00e3o use impeccable, frontend-design nem ui-ux-pro-max.';
+const txt = fs.existsSync(md) ? fs.readFileSync(md, 'utf8') : '';
+if (txt.includes(linha)) console.log('  \u21b7 linha de design no CLAUDE.md j\u00e1 estava');
+else {
+  fs.mkdirSync(path.dirname(md), { recursive: true });
+  fs.appendFileSync(md, (txt && !txt.endsWith('\n') ? '\n' : '') + linha + '\n');
+  console.log('  \u2714 linha de design no CLAUDE.md');
+}
+'@
+
+$pipelineToml = @'
+schema_version = 1
+[pipeline]
+extends = "rtk:default"
+
+[[hook.before_tool.shell]]
+name   = "keep-diffs"
+when   = { command_matches = "^(git (diff|show)|gh pr diff)\\b" }
+action = "passthrough"
+'@
+
+# Ajustes: tudo idempotente, imprime se mudou algo ou se já estava. Não contam como instalado/pulado.
+function Invoke-Ajustes {
+  # o que versões antigas do script instalavam
+  foreach ($id in 'ux-design@wondelai-skills', 'superpowers@claude-plugins-official') {
+    if (Test-Plugin $id) {
+      Run claude plugin uninstall $id
+      Write-Status ok "$id removido"
+    } else { Write-Status skip "$id já estava removido" }
+  }
+  if (Test-Market 'wondelai-skills') {
+    Run claude plugin marketplace remove wondelai-skills
+    Write-Status ok 'marketplace wondelai-skills removido'
+  } else { Write-Status skip 'marketplace wondelai-skills já estava removido' }
+
+  # caveman sem reforço a cada prompt, autoUpdate dos plugins e linha de design no CLAUDE.md
+  $ajustesJs | node -
+  if ($LASTEXITCODE) { throw "node falhou (código $LASTEXITCODE)" }
+
+  # rtk: git diff / git show / gh pr diff passam inteiros (não sobrescreve um pipeline.toml seu)
+  $toml = "$env:APPDATA\rtk\pipeline.toml"
+  if (-not (Test-Path $toml)) {
+    $null = New-Item -ItemType Directory -Force (Split-Path $toml)
+    [IO.File]::WriteAllText($toml, $pipelineToml + "`n", [Text.UTF8Encoding]::new($false))
+    Write-Status ok 'rtk com diffs inteiros (pipeline.toml)'
+  } elseif ((Get-Content $toml -Raw) -match 'keep-diffs') {
+    Write-Status skip 'rtk com diffs inteiros já estava'
+  } else { Write-Status warn 'pipeline.toml já existe sem keep-diffs; ajuste à mão' }
+
+  Install-HallmarkHook
+}
+
 function Show-Summary {
   Write-Host ''
   Write-Host "Resumo: $($OK.Count) instalados, $($SKIP.Count) pulados, $($FAIL.Count) falhas"
@@ -143,7 +224,7 @@ function Show-Summary {
 }
 
 Write-Host 'my-plugins: 9 ferramentas para o Claude Code'
-Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify', '8 hallmark', '9 design-better', '10 playwright-cli' -join " $([char]0x00B7) "))
+Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify', '8 hallmark', '9 design-better', '10 playwright-cli', '11 ajustes' -join " $([char]0x00B7) "))
 
 Show-Bar 1 'Pré-requisitos'
 if (-not (Need claude 'o Claude Code' 'irm https://claude.ai/install.ps1 | iex')) { return }
@@ -173,12 +254,13 @@ Install-Plugin 4 superpowers superpowers-marketplace obra/superpowers-marketplac
 Install-Plugin 5 code-review claude-plugins-official anthropics/claude-plugins-official
 
 Invoke-Step 6 rtk { Test-Rtk } { Install-Rtk }
-if ($SKIP.Contains('rtk')) { $null = rtk telemetry disable }
 Invoke-Step 7 graphify { Test-Graphify } { Install-Graphify }
 Install-Plugin 8 hallmark hallmark Nutlope/hallmark
-try { Install-HallmarkHook } catch { Write-Host "  $_"; Write-Status fail 'hook do hallmark erro (veja a saída acima)'; $FAIL.Add('hook do hallmark') }
 Invoke-Step 9 design-better { Test-Path "$env:USERPROFILE\.claude\skills\design-better\SKILL.md" } { Install-DesignBetter }
 Invoke-Step 10 playwright-cli { Test-Playwright } { Install-Playwright }
+
+Show-Bar 11 'ajustes'
+try { Invoke-Ajustes } catch { Write-Host "  $_"; Write-Status fail 'ajustes erro (veja a saída acima)'; $FAIL.Add('ajustes') }
 
 Show-Summary
 }
