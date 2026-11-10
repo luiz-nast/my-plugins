@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# my-plugins: instala 7 ferramentas de economia de tokens no Claude Code (Ubuntu).
+# my-plugins: instala 7 ferramentas no Claude Code (Ubuntu).
 # Uso: curl -fsSL <url>/install.sh | bash   (pode rodar de novo: pula o que já existe)
 set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
@@ -75,6 +75,17 @@ rtk_install() {
   rtk init -g --auto-patch
 }
 
+npm_g() { if [[ -w $(npm root -g) ]]; then npm i -g "$@"; else sudo npm i -g "$@"; fi; }  # node do apt precisa de sudo no -g
+
+hallmark_hook() {  # roda sempre: o hook guarda o caminho da versão do plugin, que muda a cada update
+  local dir
+  dir=$(node -p 'require(process.env.HOME + "/.claude/plugins/installed_plugins.json").plugins["hallmark@hallmark"][0].installPath')
+  node "$dir/hallmark/scripts/install-hook.mjs" --global  # sem --global grava em settings do projeto
+  [[ -d $(npm root -g)/puppeteer-core ]] || npm_g puppeteer-core ||
+    echo "  ⚠ puppeteer-core não instalou (opcional: só a checagem renderizada do Hallmark precisa)"
+}
+hallmark_install() { add_plugin hallmark Nutlope/hallmark hallmark@hallmark; hallmark_hook; }
+
 graphify_ok() { has graphify && [[ -f $HOME/.claude/skills/graphify/SKILL.md ]]; }
 graphify_install() {
   if ! has graphify; then pipx install graphifyy; hash -r; fi
@@ -97,8 +108,8 @@ summary() {
 }
 
 main() {
-  echo "my-plugins: 7 ferramentas de economia de tokens para o Claude Code"
-  echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify · 8 ux-design"
+  echo "my-plugins: 7 ferramentas para o Claude Code"
+  echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify · 8 hallmark"
 
   bar 1 "Pré-requisitos"
   local pk=() novo_pipx=0 c v
@@ -134,7 +145,7 @@ main() {
   if has rtk; then rtk telemetry disable </dev/null >/dev/null 2>&1 || true; fi
 
   run_step 7 graphify graphify_ok graphify_install
-  run_step 8 ux-design   "plugin_installed ux-design@wondelai-skills" "add_plugin wondelai-skills wondelai/skills ux-design@wondelai-skills"
+  run_step 8 hallmark    "plugin_installed hallmark@hallmark" hallmark_install
   summary
   (( ${#FAIL[@]} == 0 )) || exit 1
 }
