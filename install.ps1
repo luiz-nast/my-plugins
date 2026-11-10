@@ -114,6 +114,13 @@ Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 sup
 Show-Bar 1 'Pré-requisitos'
 if (-not (Need claude 'o Claude Code' 'irm https://claude.ai/install.ps1 | iex')) { return }
 if (-not (Need winget 'o gerenciador de pacotes do Windows' 'instale o "App Installer" da Microsoft Store')) { return }
+if (-not (Need git 'os marketplaces de plugins são repositórios git' 'winget install -e --id Git.Git')) { return }
+if (-not (Need node 'roda os hooks e o instalador de skills' 'winget install -e --id OpenJS.NodeJS.LTS')) { return }
+$nodeVer = (node -v) -replace '^v', ''
+if ([int]($nodeVer.Split('.')[0]) -lt 22) {
+  Write-Status fail "node $nodeVer é antigo; instale o Node 22+ (winget install -e --id OpenJS.NodeJS.LTS) e rode de novo"
+  return
+}
 if (-not (Need uv 'o gerenciador Python que instala o graphify' 'winget install -e --id astral-sh.uv')) { return }
 
 $ponytail = Test-Plugin 'ponytail@ponytail'
