@@ -99,6 +99,25 @@ function Install-Graphify {
   Run graphify install
 }
 
+# Hook de edição do Hallmark no settings.json global (sem --global ele escreve no projeto). Idempotente:
+# roda sempre, porque atualiza o caminho do hook, que leva a versão do plugin.
+function Install-HallmarkHook {
+  $f = "$env:USERPROFILE\.claude\plugins\installed_plugins.json"
+  $entry = $null
+  if (Test-Path $f) { $entry = (Get-Content $f -Raw | ConvertFrom-Json).plugins.'hallmark@hallmark' }
+  if (-not $entry) { Write-Status warn 'hallmark não instalado: hook de edição pulado'; return }
+  $dir = @($entry)[0].installPath
+  Run node (Join-Path $dir 'hallmark\scripts\install-hook.mjs') --global
+  Write-Status ok 'hook de edição do Hallmark'
+  # opcional: só a checagem renderizada do Hallmark usa o puppeteer-core
+  try {
+    if (Test-Path (Join-Path (npm root -g) 'puppeteer-core')) { Write-Status skip 'puppeteer-core já estava' } else {
+      Run npm i -g puppeteer-core
+      Write-Status ok 'puppeteer-core'
+    }
+  } catch { Write-Status warn 'puppeteer-core não instalou (opcional: só a checagem renderizada do Hallmark precisa)' }
+}
+
 function Show-Summary {
   Write-Host ''
   Write-Host "Resumo: $($OK.Count) instalados, $($SKIP.Count) pulados, $($FAIL.Count) falhas"
@@ -109,7 +128,7 @@ function Show-Summary {
 }
 
 Write-Host 'my-plugins: 7 ferramentas de economia de tokens para o Claude Code'
-Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify', '8 ux-design' -join " $([char]0x00B7) "))
+Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify', '8 hallmark' -join " $([char]0x00B7) "))
 
 Show-Bar 1 'Pré-requisitos'
 if (-not (Need claude 'o Claude Code' 'irm https://claude.ai/install.ps1 | iex')) { return }
@@ -141,7 +160,8 @@ Install-Plugin 5 code-review claude-plugins-official anthropics/claude-plugins-o
 Invoke-Step 6 rtk { Test-Rtk } { Install-Rtk }
 if ($SKIP.Contains('rtk')) { $null = rtk telemetry disable }
 Invoke-Step 7 graphify { Test-Graphify } { Install-Graphify }
-Install-Plugin 8 ux-design wondelai-skills wondelai/skills
+Install-Plugin 8 hallmark hallmark Nutlope/hallmark
+try { Install-HallmarkHook } catch { Write-Host "  $_"; Write-Status fail 'hook do hallmark erro (veja a saída acima)'; $FAIL.Add('hook do hallmark') }
 
 Show-Summary
 }
