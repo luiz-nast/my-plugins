@@ -115,8 +115,8 @@ function Install-HallmarkHook {
   Write-Status ok 'hook do Hallmark atualizado'
   # opcional: só a checagem renderizada do Hallmark usa o puppeteer-core
   try {
-    if (Test-Path (Join-Path (npm root -g) 'puppeteer-core')) { Write-Status skip 'puppeteer-core já estava' } else {
-      Run npm i -g puppeteer-core
+    if (Test-Path (Join-Path (npm.cmd root -g) 'puppeteer-core')) { Write-Status skip 'puppeteer-core já estava' } else {
+      Run npm.cmd i -g puppeteer-core
       Write-Status ok 'puppeteer-core'
     }
   } catch { Write-Status warn 'puppeteer-core não instalou (opcional: só a checagem renderizada do Hallmark precisa)' }
@@ -126,15 +126,16 @@ function Install-HallmarkHook {
 function Install-DesignBetter {
   $before = $env:DISABLE_TELEMETRY
   $env:DISABLE_TELEMETRY = '1'
-  try { Run npx -y skills add buildgreatproducts/builder-os --skill design-better -g --agent claude-code -y }
+  try { Run npx.cmd -y skills add buildgreatproducts/builder-os --skill design-better -g --agent claude-code -y }
   finally { $env:DISABLE_TELEMETRY = $before }
 }
 
 function Test-Playwright { (Has playwright-cli) -and (Test-Path "$env:USERPROFILE\.claude\skills\playwright-cli\SKILL.md") }
 
+# npm.cmd/npx.cmd: os atalhos .ps1 do npm são bloqueados pela política de execução padrão do Windows
 function Install-Playwright {
-  if (-not (Has playwright-cli)) { Run npm i -g '@playwright/cli@latest'; Update-Path }
-  Run playwright-cli install --skills --global
+  if (-not (Has playwright-cli)) { Run npm.cmd i -g '@playwright/cli@latest'; Update-Path }
+  Run playwright-cli.cmd install --skills --global
 }
 
 # JS em ASCII puro (acentos em \u escapes), igual ao do install.sh. Os terminadores '@ ficam na coluna 0.
