@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# my-plugins: instala 7 ferramentas no Claude Code (Ubuntu).
+# my-plugins: instala 9 ferramentas no Claude Code (Ubuntu).
 # Uso: curl -fsSL <url>/install.sh | bash   (pode rodar de novo: pula o que já existe)
 set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
 
-N=8
+N=10
 OK=() SKIP=() FAIL=()
 PL=""  # cache de `claude plugin list --json` (grep -q num pipe quebra com pipefail)
 
@@ -92,6 +92,15 @@ graphify_install() {
   graphify install
 }
 
+design_ok() { [[ -f $HOME/.claude/skills/design-better/SKILL.md ]]; }
+design_install() { DISABLE_TELEMETRY=1 npx -y skills add buildgreatproducts/builder-os --skill design-better -g --agent claude-code -y; }
+
+playwright_ok() { has playwright-cli && [[ -f $HOME/.claude/skills/playwright-cli/SKILL.md ]]; }
+playwright_install() {
+  if ! has playwright-cli; then npm_g @playwright/cli@latest; hash -r; fi
+  playwright-cli install --skills --global
+}
+
 line() {  # line "rótulo" itens...: só imprime se houver itens
   (( $# > 1 )) || return 0
   local s; printf -v s '%s, ' "${@:2}"
@@ -108,8 +117,8 @@ summary() {
 }
 
 main() {
-  echo "my-plugins: 7 ferramentas para o Claude Code"
-  echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify · 8 hallmark"
+  echo "my-plugins: 9 ferramentas para o Claude Code"
+  echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify · 8 hallmark · 9 design-better · 10 playwright-cli"
 
   bar 1 "Pré-requisitos"
   local pk=() novo_pipx=0 c v
@@ -146,6 +155,8 @@ main() {
 
   run_step 7 graphify graphify_ok graphify_install
   run_step 8 hallmark    "plugin_installed hallmark@hallmark" hallmark_install
+  run_step 9 design-better design_ok design_install
+  run_step 10 playwright-cli playwright_ok playwright_install
   summary
   (( ${#FAIL[@]} == 0 )) || exit 1
 }
