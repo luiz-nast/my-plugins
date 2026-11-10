@@ -121,18 +121,22 @@ Uma falha não interrompe as outras etapas. No fim aparece um resumo.
 ## Como fica
 
 Prints reais do `install.sh` no Ubuntu.
+A saída dos instaladores de terceiros (npx, npm, clone dos marketplaces) foi cortada: ficam só as linhas do script.
 
-**Máquina nova** (a saída de cada instalador foi omitida, ficam só as linhas do script):
+**Atualizando do pack antigo** (instala o que faltava e ajusta o resto):
 
-![Instalação numa máquina nova](docs/img/install-fresh.png)
+![Atualizando do pack antigo](docs/img/install-update.png)
 
-**Rodando de novo** (pula o que já está instalado):
+O `⚠` do puppeteer-core é real: o npm falhou por erro de certificado da rede dessa máquina.
+Ele é opcional (só a checagem renderizada do Hallmark usa) e o resto seguiu normal.
 
-![Tudo já instalado](docs/img/install-skip.png)
+**Rodando de novo** (tudo pulado, nada muda; só o hook do Hallmark é regravado, porque leva a versão do plugin):
 
-**Falta um pré-requisito** (explica, espera o Enter e para sem mudar nada):
+![Segunda execução: tudo pulado](docs/img/install-skip.png)
 
-![Falta pipx](docs/img/install-missing.png)
+**Só conferir** (`--check`, não instala nada):
+
+![Verificador](docs/img/install-check.png)
 
 O `install.ps1` mostra as mesmas etapas e status no Windows; ainda não há print dele.
 
