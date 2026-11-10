@@ -125,7 +125,8 @@ main() {
   refresh
   run_step 2 ponytail    "plugin_installed ponytail@ponytail" "add_plugin ponytail DietrichGebert/ponytail ponytail@ponytail"
   run_step 3 caveman     "plugin_installed caveman@caveman"   "add_plugin caveman JuliusBrussee/caveman caveman@caveman"
-  run_step 4 superpowers "plugin_installed superpowers@claude-plugins-official" "add_plugin $official superpowers@claude-plugins-official"
+  # o marketplace oficial fixa a v7.0.0 por sha; o do autor não tem pin (pega a última)
+  run_step 4 superpowers "plugin_installed superpowers@superpowers-marketplace" "add_plugin superpowers-marketplace obra/superpowers-marketplace superpowers@superpowers-marketplace"
   run_step 5 code-review "plugin_installed code-review@claude-plugins-official" "add_plugin $official code-review@claude-plugins-official"
 
   run_step 6 rtk rtk_ok rtk_install
