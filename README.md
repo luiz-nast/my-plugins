@@ -92,31 +92,52 @@ curl -fsSL https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.s
 irm https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.ps1 | iex
 ```
 
+Pode rodar de novo: o que já está instalado é pulado.
+
+### Só conferir (verificador)
+
+Confere o pack sem instalar nada e mostra uma tabela `OK` / `FALTA`.
+
+**Ubuntu**
+```bash
+curl -fsSL https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.sh | bash -s -- --check
+```
+
+**Windows**: salve o arquivo e rode com `--check`. Com `irm | iex` o verificador já roda sozinho no fim da instalação.
+```powershell
+irm https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.ps1 -OutFile install.ps1
+.\install.ps1 --check
+```
+
 ### Requisitos
 
-| Ubuntu | Windows |
-|---|---|
-| Claude Code (`claude`) | Claude Code (`claude`) |
-| `curl` | `winget` (App Installer, Microsoft Store) |
-| `git` | `uv` (`winget install -e --id astral-sh.uv`) |
-| `pipx` (`sudo apt install -y pipx && pipx ensurepath`) | |
+**Ubuntu**: só o Claude Code (`claude`) antes de começar.
+O script instala o resto com `apt` (pede a senha do sudo): `git`, `curl`, node (`nodejs` e `npm`), `python3` e `pipx`.
+Precisa de Node 22+. Se o apt trouxer um mais antigo, o script para e sugere o [nvm](https://github.com/nvm-sh/nvm).
+Se faltar o `claude`, o script mostra como instalar e espera você apertar Enter.
 
-Se faltar algo, o script mostra como instalar e espera você apertar Enter.
-Se ainda faltar, ele para sem mudar nada.
+**Windows**: Claude Code (`claude`), `winget` (App Installer, Microsoft Store), `git`, Node 22+ (`winget install -e --id OpenJS.NodeJS.LTS`) e `uv` (`winget install -e --id astral-sh.uv`).
+O Python não é conferido: o `uv` traz o dele.
+Se faltar algo, o script mostra o comando do winget e espera você apertar Enter. Se ainda faltar, ele para sem mudar nada.
 
 ### Etapas
 
-1. **Pré-requisitos**: confere os requisitos acima (no Windows, pergunta sobre o ponytail).
+1. **Pré-requisitos**: confere (e no Ubuntu instala) os requisitos acima. No Windows, pergunta sobre o ponytail.
 2. **ponytail**
 3. **caveman**
-4. **superpowers**
+4. **superpowers**: do marketplace do autor.
 5. **code-review**
-6. **rtk**: instala, faz backup do `settings.json`, liga o hook global e desliga a telemetria.
+6. **rtk**: instala, faz backup do `settings.json` e liga o hook global.
 7. **graphify**: instala e roda `graphify install`.
-8. **ux-design**
+8. **hallmark**
+9. **design-better**: via `npx skills add` (com a telemetria desse CLI desligada na chamada).
+10. **playwright-cli**: `npm i -g @playwright/cli` e `playwright-cli install --skills --global`.
+11. **ajustes**: remove o `ux-design` (wondelai) e o superpowers fixo antigo; caveman sem reforço; diffs inteiros no rtk; `autoUpdate` nos marketplaces; linha de design no `CLAUDE.md`; hook do Hallmark e `puppeteer-core` (opcional).
 
-Cada etapa mostra uma barra de progresso e um status: `✔` ok, `↷` já instalado/pulado, `✖` erro.
-Uma falha não interrompe as outras etapas. No fim aparece um resumo.
+Depois roda o verificador.
+
+Cada etapa mostra uma barra de progresso e um status: `✔` ok, `↷` já instalado/pulado, `✖` erro, `⚠` aviso.
+Uma falha não interrompe as outras etapas. No fim aparecem o resumo e a verificação.
 
 ## Como fica
 
@@ -142,31 +163,81 @@ O `install.ps1` mostra as mesmas etapas e status no Windows; ainda não há prin
 
 ## O que muda na máquina
 
-- `~/.claude/settings.json`: hook global `PreToolUse` do rtk.
-- `~/.claude/settings.json.bak-AAAAMMDD-HHMMSS`: backup feito logo antes do `rtk init`.
+- `~/.claude/settings.json`:
+  * hook `PreToolUse` do rtk;
+  * hook `PostToolUse` do Hallmark (Write, Edit e MultiEdit);
+  * `extraKnownMarketplaces.*.autoUpdate: true` em ponytail, caveman, hallmark e superpowers-marketplace;
+  * `env.FORCE_AUTOUPDATE_PLUGINS=1`, porque o app desktop do Claude liga `DISABLE_AUTOUPDATER=1`, que pularia o auto-update dos plugins.
+- `~/.claude/settings.json.bak-AAAAMMDD-HHMMSS`: backup, feito só quando algo muda (o `config.json` do caveman ganha o mesmo tipo de backup).
 - `~/.claude/RTK.md` e a linha `@RTK.md` no `~/.claude/CLAUDE.md`.
-- `~/.claude/skills/graphify/` e um bloco do graphify no `~/.claude/CLAUDE.md`.
+- `~/.claude/CLAUDE.md`: bloco do graphify e a linha de design (Hallmark faz o visual, design-better cuida da UX).
+- `~/.claude/skills/`: `graphify`, `design-better` e `playwright-cli`.
+- `~/.agents/.skill-lock.json`: escrito pelo CLI de skills (`npx skills`).
 - `~/.claude/plugins/`: plugins e marketplaces.
-- Binários: Ubuntu em `~/.local/bin` (rtk; graphify via pipx). Windows: links do winget e `%USERPROFILE%\.local\bin`.
-- Telemetria do rtk desligada (`rtk telemetry disable`).
+- `~/.config/caveman/config.json` (`reinforce: false`) e `~/.config/rtk/pipeline.toml` (regra `keep-diffs`).
+  No Windows: `%APPDATA%\caveman\config.json` e `%APPDATA%\rtk\pipeline.toml`.
+- npm global: `@playwright/cli` e `puppeteer-core` (no Ubuntu, com `sudo` se a pasta global do npm não for sua).
+- Binários: rtk e graphify. Ubuntu em `~/.local/bin` (rtk; graphify via pipx). Windows: links do winget e `%USERPROFILE%\.local\bin`.
+- Ubuntu: pacotes do `apt` que faltavam (`git`, `curl`, `nodejs`, `npm`, `python3`, `pipx`).
 
 No Windows, `~` é `%USERPROFILE%`.
 
+## Atualizar
+
+* **ponytail, caveman, hallmark e superpowers**: os marketplaces têm `autoUpdate`, então se atualizam sozinhos. O `claude-plugins-official` (code-review) já atualiza por padrão.
+* **design-better** (não tem marketplace): rode nos **dois PCs**, para não divergirem. O instalador pula o design-better quando ele já existe, então este é o caminho de atualização:
+  ```bash
+  npx skills add buildgreatproducts/builder-os --skill design-better -g --agent claude-code -y
+  ```
+* **playwright-cli**: `npm i -g @playwright/cli@latest`.
+* **Hallmark**: depois de atualizar, rode o instalador de novo. Ele atualiza o caminho do hook, que inclui a versão do plugin.
+
 ## Desinstalar
+
+**Hook do Hallmark** (tire **antes** de desinstalar o plugin; a pasta é o `installPath` de `hallmark@hallmark` em `~/.claude/plugins/installed_plugins.json`):
+```bash
+# Ubuntu
+dir=$(node -p 'require(process.env.HOME + "/.claude/plugins/installed_plugins.json").plugins["hallmark@hallmark"][0].installPath')
+node "$dir/hallmark/scripts/install-hook.mjs" --remove --global
+```
+```powershell
+# Windows
+$entry = (Get-Content "$env:USERPROFILE\.claude\plugins\installed_plugins.json" -Raw | ConvertFrom-Json).plugins.'hallmark@hallmark'
+$dir = @($entry)[0].installPath
+node (Join-Path $dir 'hallmark\scripts\install-hook.mjs') --remove --global
+```
 
 **Plugins** (Ubuntu e Windows):
 ```bash
 claude plugin uninstall ponytail@ponytail
 claude plugin uninstall caveman@caveman
-claude plugin uninstall superpowers@claude-plugins-official
+claude plugin uninstall superpowers@superpowers-marketplace
 claude plugin uninstall code-review@claude-plugins-official
-claude plugin uninstall ux-design@wondelai-skills
+claude plugin uninstall hallmark@hallmark
 claude plugin marketplace remove ponytail
 claude plugin marketplace remove caveman
-claude plugin marketplace remove wondelai-skills
+claude plugin marketplace remove superpowers-marketplace
+claude plugin marketplace remove hallmark
 ```
 Opcional: `claude plugin marketplace remove claude-plugins-official`.
 Cuidado: outros plugins seus podem usar esse marketplace.
+
+**design-better**:
+```bash
+npx skills remove --global design-better
+```
+
+**playwright-cli** e **puppeteer-core** (no Ubuntu, use `sudo` no `npm` se o instalador usou):
+```bash
+# Ubuntu
+npm uninstall -g @playwright/cli puppeteer-core
+rm -rf ~/.claude/skills/playwright-cli
+```
+```powershell
+# Windows
+npm.cmd uninstall -g @playwright/cli puppeteer-core
+Remove-Item -Recurse -Force "$env:USERPROFILE\.claude\skills\playwright-cli"
+```
 
 **rtk** (opcional antes: `rtk telemetry forget`):
 ```bash
@@ -180,7 +251,7 @@ rtk init -g --uninstall
 winget uninstall -e --id rtk-ai.rtk
 ```
 
-**graphify**:
+**graphify** (não use `graphify uninstall --purge`):
 ```bash
 # Ubuntu
 graphify uninstall
@@ -191,6 +262,9 @@ pipx uninstall graphifyy
 graphify uninstall
 uv tool uninstall graphifyy
 ```
+
+**Arquivos de configuração**: apague `~/.config/caveman/config.json` e `~/.config/rtk/pipeline.toml` (Windows: `%APPDATA%\caveman\config.json` e `%APPDATA%\rtk\pipeline.toml`).
+Opcional: tirar `env.FORCE_AUTOUPDATE_PLUGINS` do `settings.json` e a linha de design do `CLAUDE.md`.
 
 Opcional: restaurar o backup `settings.json.bak-*` por cima do `settings.json`.
 Isso descarta qualquer mudança feita no `settings.json` depois do backup.
@@ -204,10 +278,12 @@ Isso descarta qualquer mudança feita no `settings.json` depois do backup.
   ```powershell
   claude plugin install ponytail@ponytail
   ```
+- **puppeteer-core é opcional**: só a checagem renderizada do Hallmark usa. Se não instalar, aparece um `⚠` e o resto segue.
+- **npm.cmd e npx.cmd no Windows**: o script chama as versões `.cmd`, porque a política de execução do PowerShell bloqueia os atalhos `.ps1` do npm. Nos comandos à mão, faça o mesmo.
 - **Símbolos como quadrados** (`✔ ✖ ↷ ⏳ █`): o console antigo do Windows (conhost) não desenha esses caracteres. Use o Windows Terminal.
-- **Reinicie o Claude Code** (feche e abra de novo) depois de instalar, para carregar os plugins e o hook do rtk. No Windows, reabra também o terminal.
+- **Reinicie o Claude Code** (feche e abra de novo) depois de instalar, para carregar os plugins e os hooks. No Windows, reabra também o terminal.
 
 ## Status
 
-- **Ubuntu**: testado.
-- **Windows**: a versão anterior foi testada e funcionou; o novo `install.ps1` ainda não foi testado. Testes pendentes.
+- **Ubuntu**: testado em 2026-11-10 (execução real, segunda execução sem mudanças e verificador com tudo `OK`).
+- **Windows**: a versão anterior foi testada e funcionou; este novo `install.ps1` **não foi testado** no Windows (só revisado). Testes pendentes.
