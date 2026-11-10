@@ -1,4 +1,4 @@
-# my-plugins: instala 7 ferramentas de economia de tokens no Claude Code (Windows PowerShell 5.1 e 7).
+# my-plugins: instala 9 ferramentas para o Claude Code (Windows PowerShell 5.1 e 7).
 # Uso: irm https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.ps1 | iex
 # Pode rodar de novo: o que já está instalado é pulado.
 # Tudo dentro de & { }: sob iex, um exit fecharia a janela do usuário.
@@ -6,7 +6,7 @@
 $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8; $OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 
-$N = 8
+$N = 10
 $settings = "$env:USERPROFILE\.claude\settings.json"
 $OK = [Collections.Generic.List[string]]::new()
 $SKIP = [Collections.Generic.List[string]]::new()
@@ -118,6 +118,21 @@ function Install-HallmarkHook {
   } catch { Write-Status warn 'puppeteer-core não instalou (opcional: só a checagem renderizada do Hallmark precisa)' }
 }
 
+# Precisa de Node 22.20+ e git. O CLI skills manda telemetria: desligada só durante esta chamada.
+function Install-DesignBetter {
+  $before = $env:DISABLE_TELEMETRY
+  $env:DISABLE_TELEMETRY = '1'
+  try { Run npx -y skills add buildgreatproducts/builder-os --skill design-better -g --agent claude-code -y }
+  finally { $env:DISABLE_TELEMETRY = $before }
+}
+
+function Test-Playwright { (Has playwright-cli) -and (Test-Path "$env:USERPROFILE\.claude\skills\playwright-cli\SKILL.md") }
+
+function Install-Playwright {
+  if (-not (Has playwright-cli)) { Run npm i -g '@playwright/cli@latest'; Update-Path }
+  Run playwright-cli install --skills --global
+}
+
 function Show-Summary {
   Write-Host ''
   Write-Host "Resumo: $($OK.Count) instalados, $($SKIP.Count) pulados, $($FAIL.Count) falhas"
@@ -127,8 +142,8 @@ function Show-Summary {
   Write-Status warn 'Reinicie o Claude Code (feche e abra de novo) e reabra o terminal para carregar plugins e o hook do rtk.'
 }
 
-Write-Host 'my-plugins: 7 ferramentas de economia de tokens para o Claude Code'
-Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify', '8 hallmark' -join " $([char]0x00B7) "))
+Write-Host 'my-plugins: 9 ferramentas para o Claude Code'
+Write-Host ('Etapas: ' + ('1 Pré-requisitos', '2 ponytail', '3 caveman', '4 superpowers', '5 code-review', '6 rtk', '7 graphify', '8 hallmark', '9 design-better', '10 playwright-cli' -join " $([char]0x00B7) "))
 
 Show-Bar 1 'Pré-requisitos'
 if (-not (Need claude 'o Claude Code' 'irm https://claude.ai/install.ps1 | iex')) { return }
@@ -162,6 +177,8 @@ if ($SKIP.Contains('rtk')) { $null = rtk telemetry disable }
 Invoke-Step 7 graphify { Test-Graphify } { Install-Graphify }
 Install-Plugin 8 hallmark hallmark Nutlope/hallmark
 try { Install-HallmarkHook } catch { Write-Host "  $_"; Write-Status fail 'hook do hallmark erro (veja a saída acima)'; $FAIL.Add('hook do hallmark') }
+Invoke-Step 9 design-better { Test-Path "$env:USERPROFILE\.claude\skills\design-better\SKILL.md" } { Install-DesignBetter }
+Invoke-Step 10 playwright-cli { Test-Playwright } { Install-Playwright }
 
 Show-Summary
 }
