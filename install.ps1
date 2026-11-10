@@ -134,7 +134,8 @@ if ($ponytail) { Install-Plugin 2 ponytail ponytail DietrichGebert/ponytail } el
   Show-Bar 2 ponytail; Write-Status skip 'ponytail pulado (escolha do usuário)'; $SKIP.Add('ponytail')
 }
 Install-Plugin 3 caveman caveman JuliusBrussee/caveman
-Install-Plugin 4 superpowers claude-plugins-official anthropics/claude-plugins-official
+# o marketplace oficial fixa o superpowers na v7.0.0 por sha; o do autor não fixa (última versão)
+Install-Plugin 4 superpowers superpowers-marketplace obra/superpowers-marketplace
 Install-Plugin 5 code-review claude-plugins-official anthropics/claude-plugins-official
 
 Invoke-Step 6 rtk { Test-Rtk } { Install-Rtk }
