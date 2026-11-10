@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # my-plugins: instala 9 ferramentas no Claude Code (Ubuntu).
 # Uso: curl -fsSL <url>/install.sh | bash   (pode rodar de novo: pula o que já existe)
+#      curl -fsSL <url>/install.sh | bash -s -- --check   (só confere, não instala)
 set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
 
 N=11
 OK=() SKIP=() FAIL=()
+MISS=0  # itens que o verificar não achou
 PL=""  # cache de `claude plugin list --json` (grep -q num pipe quebra com pipefail)
 
 has() { command -v "$1" >/dev/null 2>&1; }
@@ -196,7 +198,50 @@ summary() {
   echo "⚠ Reinicie o Claude Code (feche e abra de novo) para carregar plugins e o hook do rtk."
 }
 
+check() {  # check "nome" cmd args...: roda o comando (sem eval) e imprime OK ou FALTA
+  local nome=$1; shift
+  if "$@" >/dev/null 2>&1; then printf '  OK     %s\n' "$nome"
+  else printf '  FALTA  %s\n' "$nome"; MISS=$((MISS + 1)); fi
+}
+
+plugin_on()   { node -e 'process.exit(JSON.parse(process.argv[1]).some(p => p.id === process.argv[2] && p.enabled) ? 0 : 1)' "$PL" "$1"; }
+plugin_gone() { ! plugin_installed "$1"; }
+caveman_ok()  { node -e 'process.exit(require(process.env.HOME + "/.config/caveman/config.json").reinforce === false ? 0 : 1)'; }
+autoupdate_ok() {
+  node -e 'const m = require(process.env.HOME + "/.claude/settings.json").extraKnownMarketplaces || {};
+    process.exit(["ponytail", "caveman", "hallmark", "superpowers-marketplace"].every(k => m[k] && m[k].autoUpdate === true) ? 0 : 1)'
+}
+rtk_diffs() {  # o pipeline.toml dos ajustes deixa git diff e gh pr diff passarem inteiros
+  local c
+  for c in "git diff" "gh pr diff 1"; do
+    [[ $(rtk pipeline explain --agent claude-code --tool Bash --command "$c") == *passthrough* ]] || return 1
+  done
+}
+
+verificar() {  # só lê: roda também com --check
+  local id c cfg="$HOME/.claude/settings.json"
+  local design='Design: o Hallmark é o único líder visual (temas prontos); o design-better cuida da UX (heurísticas numeradas e Laws of UX); não use impeccable, frontend-design nem ui-ux-pro-max.'
+  MISS=0; refresh
+  echo; echo "Verificação"
+  for id in ponytail@ponytail caveman@caveman superpowers@superpowers-marketplace code-review@claude-plugins-official hallmark@hallmark; do
+    check "plugin $id" plugin_on "$id"
+  done
+  check "ux-design (wondelai) removido" plugin_gone ux-design@wondelai-skills
+  check "superpowers antigo removido" plugin_gone superpowers@claude-plugins-official
+  check "hook do rtk no settings.json" grep -q "rtk hook" "$cfg"
+  check "rtk diffs inteiros" rtk_diffs
+  check "hook do Hallmark no settings.json" grep -q lint-hook.mjs "$cfg"
+  check "design-better" test -f "$HOME/.claude/skills/design-better/SKILL.md"
+  check "skill playwright-cli" test -f "$HOME/.claude/skills/playwright-cli/SKILL.md"
+  check "caveman sem reforço" caveman_ok
+  check "autoUpdate nos marketplaces" autoupdate_ok
+  check "linha de design no CLAUDE.md" grep -qF "$design" "$HOME/.claude/CLAUDE.md"
+  for c in node git graphify playwright-cli rtk; do check "no PATH: $c" has "$c"; done
+  if (( MISS )); then echo "$MISS itens faltando"; else echo "Tudo OK"; fi
+}
+
 main() {
+  if [[ ${1:-} == --check ]]; then verificar; exit $(( MISS > 0 )); fi  # só confere, não instala
   echo "my-plugins: 9 ferramentas para o Claude Code"
   echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify · 8 hallmark · 9 design-better · 10 playwright-cli · 11 ajustes"
 
@@ -240,7 +285,8 @@ main() {
   set +e; ( set -e; ajustes ) </dev/null; local rc=$?; set -e
   (( rc == 0 )) || { status fail ajustes; FAIL+=(ajustes); }
   summary
-  (( ${#FAIL[@]} == 0 )) || exit 1
+  verificar
+  (( ${#FAIL[@]} == 0 && MISS == 0 )) || exit 1
 }
 
 # main no fim: um download parcial via curl | bash não executa nada
