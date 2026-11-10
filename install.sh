@@ -101,10 +101,24 @@ main() {
   echo "Etapas: 1 Pré-requisitos · 2 ponytail · 3 caveman · 4 superpowers · 5 code-review · 6 rtk · 7 graphify · 8 ux-design"
 
   bar 1 "Pré-requisitos"
+  local pk=() novo_pipx=0 c v
+  has git     || pk+=(git)
+  has curl    || pk+=(curl)
+  has node    || pk+=(nodejs npm)
+  has python3 || pk+=(python3)
+  has pipx    || { pk+=(pipx); novo_pipx=1; }
+  if (( ${#pk[@]} )); then
+    echo "  ⏳ instalando com apt: ${pk[*]} (o sudo pede a senha)..."
+    sudo apt-get install -y "${pk[@]}" </dev/null || true  # a checagem abaixo diz o que faltou
+    hash -r
+    if (( novo_pipx )) && has pipx; then pipx ensurepath; fi
+  fi
+  for c in git curl node python3 pipx; do
+    has "$c" || { echo "  ✖ $c não encontrado (o apt não conseguiu instalar). Instale à mão e rode o script de novo."; exit 1; }
+  done
+  v=$(node -v); v=${v#v}
+  (( ${v%%.*} >= 22 )) || { echo "  ✖ node $v é antigo; instale o Node 22+ (ex.: nvm: https://github.com/nvm-sh/nvm, depois \`nvm install --lts\`) e rode de novo"; exit 1; }
   need claude "o Claude Code (CLI)" "curl -fsSL https://claude.ai/install.sh | bash"
-  need curl "baixa arquivos da internet" "sudo apt install -y curl"
-  need git "os marketplaces de plugins são repositórios git" "sudo apt install -y git"
-  need pipx "instala o graphify (Python) isolado" "sudo apt install -y pipx && pipx ensurepath"
   echo "  ✔ pré-requisitos ok"
 
   local official="claude-plugins-official anthropics/claude-plugins-official"
