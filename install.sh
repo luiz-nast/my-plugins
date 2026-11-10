@@ -254,7 +254,7 @@ main() {
   has pipx    || { pk+=(pipx); novo_pipx=1; }
   if (( ${#pk[@]} )); then
     echo "  ⏳ instalando com apt: ${pk[*]} (o sudo pede a senha)..."
-    sudo apt-get install -y "${pk[@]}" </dev/null || true  # a checagem abaixo diz o que faltou
+    { sudo apt-get update -qq && sudo apt-get install -y "${pk[@]}"; } </dev/null || true  # a checagem abaixo diz o que faltou
     hash -r
     if (( novo_pipx )) && has pipx; then pipx ensurepath; fi
   fi
