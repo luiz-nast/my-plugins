@@ -1,6 +1,6 @@
 # my-plugins: instala 9 ferramentas para o Claude Code (Windows PowerShell 5.1 e 7).
 # Uso: irm https://raw.githubusercontent.com/luiz-nast/my-plugins/main/install.ps1 | iex
-# Pode rodar de novo: o que já está instalado é pulado.
+# Pode rodar de novo: o que já está instalado é pulado. Só conferir, sem instalar: .\install.ps1 --check
 # Tudo dentro de & { }: sob iex, um exit fecharia a janela do usuário.
 & {
 $ErrorActionPreference = 'Stop'
@@ -13,6 +13,7 @@ $settings = "$env:USERPROFILE\.claude\settings.json"
 $OK = [Collections.Generic.List[string]]::new()
 $SKIP = [Collections.Generic.List[string]]::new()
 $FAIL = [Collections.Generic.List[string]]::new()
+$MISS = [Collections.Generic.List[string]]::new()
 
 function Has($cmd) { [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
 
@@ -74,7 +75,9 @@ function Install-Plugin($i, $name, $market, $repo) {
   Invoke-Step $i $name { Test-Plugin $id } { Add-Market $market $repo; Run claude plugin install $id }
 }
 
-function Test-Rtk { (Has rtk) -and (Test-Path $settings) -and ((Get-Content $settings -Raw) -match 'rtk(\.exe)? hook') }
+function Test-Settings($pattern) { (Test-Path $settings) -and ((Get-Content $settings -Raw -Encoding UTF8) -match $pattern) }
+
+function Test-Rtk { (Has rtk) -and (Test-Settings 'rtk(\.exe)? hook') }
 
 # Cópia com data e hora: settings.json.bak pode já existir com outra origem.
 function Backup-Settings {
@@ -214,6 +217,77 @@ function Invoke-Ajustes {
   Install-HallmarkHook
 }
 
+# Verificador: só lê. Roda no fim da instalação e sozinho com .\install.ps1 --check
+function Check($name, $pass) {
+  if ($pass) { Write-Host "  OK     $name" } else { Write-Host "  FALTA  $name"; $MISS.Add($name) }
+}
+
+# id -> ligado, de `claude plugin list --json` (ConvertFrom-Json devolve o array inteiro no PS 5.1: por isso foreach, sem pipe)
+function Get-Plugins {
+  $h = @{}
+  try {
+    $list = (claude plugin list --json | Out-String) | ConvertFrom-Json
+    foreach ($p in $list) { $h[$p.id] = [bool]$p.enabled }
+  } catch {}
+  $h
+}
+
+function Read-Json($file) { try { Get-Content $file -Raw -Encoding UTF8 | ConvertFrom-Json } catch { $null } }
+
+function Test-Caveman { $c = Read-Json "$env:APPDATA\caveman\config.json"; $c -and ($c.reinforce -eq $false) }
+
+function Test-AutoUpdate {
+  $mk = (Read-Json $settings).extraKnownMarketplaces
+  $names = 'caveman', 'hallmark', 'superpowers-marketplace'
+  if ($ponytail) { $names = @('ponytail') + $names }
+  foreach ($m in $names) { if ($mk.$m.autoUpdate -ne $true) { return $false } }
+  $true
+}
+
+# o pipeline.toml dos ajustes faz git diff e gh pr diff passarem inteiros ("action passthrough" na saída)
+function Test-RtkDiffs {
+  if (-not (Has rtk)) { return $false }
+  foreach ($c in 'git diff', 'gh pr diff 1') {
+    if (-not ((rtk pipeline explain --agent claude-code --tool Bash --command $c | Out-String) -match 'action passthrough')) { return $false }
+  }
+  $true
+}
+
+function Test-DesignLine {
+  $md = "$env:USERPROFILE\.claude\CLAUDE.md"
+  $line = [regex]::Unescape('Design: o Hallmark \u00e9 o \u00fanico l\u00edder visual (temas prontos); o design-better cuida da UX (heur\u00edsticas numeradas e Laws of UX); n\u00e3o use impeccable, frontend-design nem ui-ux-pro-max.')
+  (Test-Path $md) -and ((Get-Content $md -Raw -Encoding UTF8) -match [regex]::Escape($line))
+}
+
+function Verificar {
+  $MISS.Clear()
+  Write-Host ''
+  Write-Host 'Verificação'
+  $plugins = Get-Plugins
+  if ($ponytail) { Check 'plugin ponytail@ponytail' ($plugins['ponytail@ponytail'] -eq $true) } else {
+    Write-Host '  PULADO  ponytail@ponytail (escolha do usuário)'
+  }
+  foreach ($id in 'caveman@caveman', 'superpowers@superpowers-marketplace', 'code-review@claude-plugins-official', 'hallmark@hallmark') {
+    Check "plugin $id" ($plugins[$id] -eq $true)
+  }
+  Check 'ux-design (wondelai) removido' (-not $plugins.ContainsKey('ux-design@wondelai-skills'))
+  Check 'superpowers antigo removido' (-not $plugins.ContainsKey('superpowers@claude-plugins-official'))
+  Check 'hook do rtk no settings.json' (Test-Settings 'rtk(\.exe)? hook')
+  Check 'rtk diffs inteiros' (Test-RtkDiffs)
+  Check 'hook do Hallmark no settings.json' (Test-Settings 'lint-hook\.mjs')
+  Check 'design-better' (Test-Path "$env:USERPROFILE\.claude\skills\design-better\SKILL.md")
+  Check 'skill playwright-cli' (Test-Path "$env:USERPROFILE\.claude\skills\playwright-cli\SKILL.md")
+  Check 'caveman sem reforço' (Test-Caveman)
+  Check 'autoUpdate nos marketplaces' (Test-AutoUpdate)
+  Check 'linha de design no CLAUDE.md' (Test-DesignLine)
+  foreach ($c in 'node', 'git', 'graphify', 'playwright-cli', 'rtk') { Check "no PATH: $c" (Has $c) }
+  Write-Host ''
+  if ($MISS.Count) {
+    Write-Status fail "verificador: $($MISS.Count) itens faltando"
+    $global:LASTEXITCODE = 1
+  } else { Write-Status ok 'Tudo OK' }
+}
+
 function Show-Summary {
   Write-Host ''
   Write-Host "Resumo: $($OK.Count) instalados, $($SKIP.Count) pulados, $($FAIL.Count) falhas"
@@ -221,6 +295,13 @@ function Show-Summary {
   if ($SKIP.Count) { Write-Status skip "pulados: $($SKIP -join ', ')" }
   if ($FAIL.Count) { Write-Status fail "falhas: $($FAIL -join ', ')" }
   Write-Status warn 'Reinicie o Claude Code (feche e abra de novo) e reabra o terminal para carregar plugins e o hook do rtk.'
+}
+
+# --check (só rodando como arquivo; sob iex $args vem vazio): confere sem instalar nada
+if ($args -contains '--check') {
+  $ponytail = (Has claude) -and (Test-Plugin 'ponytail@ponytail')  # sem prompt: ponytail ausente conta como pulado
+  Verificar
+  return
 }
 
 Write-Host 'my-plugins: 9 ferramentas para o Claude Code'
@@ -263,4 +344,5 @@ Show-Bar 11 'ajustes'
 try { Invoke-Ajustes } catch { Write-Host "  $_"; Write-Status fail 'ajustes erro (veja a saída acima)'; $FAIL.Add('ajustes') }
 
 Show-Summary
-}
+Verificar
+} @args
