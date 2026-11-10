@@ -3,27 +3,52 @@
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-suportado-E95420?logo=ubuntu&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-suportado-0078D6?logo=windows&logoColor=white)
 
-Um comando instala 7 ferramentas que economizam tokens no Claude Code.
-Pula o que já está instalado e desliga a telemetria do rtk.
+Um comando instala 9 ferramentas para o Claude Code.
+Pula o que já está instalado.
+
+**Nem todas economizam tokens.**
+rtk, caveman, ponytail e playwright-cli economizam.
+superpowers, code-review, hallmark e design-better melhoram a qualidade e o design (superpowers e code-review até gastam mais).
+O graphify depende: ajuda em repositório grande.
 
 ## Como usar
 
-![Como usar os 7 plugins](docs/img/como-usar.png)
+![Como usar os 9 itens](docs/img/como-usar.png)
 
-**Já trabalham sozinhos** (não precisa fazer nada):
-* **rtk**: comando mais especial `rtk gain` (no terminal), que mostra quanto já economizou.
-* **caveman**: comando mais especial `/caveman ultra`, que deixa as respostas ainda mais curtas. Para desligar, escreva `stop caveman`.
-* **ponytail**: comando mais especial `/ponytail-review`, que revisa uma mudança. Para desligar, escreva `stop ponytail`.
-* **superpowers**: puxa sozinho as skills de planejar, testar e depurar. Comando mais especial `/superpowers:brainstorming`, para planejar uma ideia antes de codar.
-* **ux-design**: o Claude puxa sozinho a skill certa quando o assunto é tela, usabilidade ou design. Comando mais especial `/ux-design:ux-heuristics`, que faz uma auditoria de usabilidade (Krug + as 10 heurísticas de Nielsen).
+**Ligam sozinhos** (não precisa fazer nada):
+* **ponytail**: hook ao abrir a sessão. Comando mais especial `/ponytail-review`, que revisa uma mudança. Para desligar, escreva `stop ponytail`.
+* **caveman**: hook ao abrir a sessão. Comando mais especial `/caveman ultra`, que deixa as respostas ainda mais curtas. O script desliga o reforço a cada prompt (`reinforce: false`). Para desligar, escreva `stop caveman`.
+* **superpowers**: hook e skills de planejar, testar e depurar. Comando mais especial `/superpowers:brainstorming`, para planejar uma ideia antes de codar.
+* **rtk**: hook que comprime a saída dos comandos do terminal. Comando mais especial `rtk gain` (no terminal), que mostra quanto já economizou (no uso real: ~900 mil tokens, 25%). `git diff`, `git show` e `gh pr diff` passam inteiros.
+* **hallmark**: o único líder de design visual (temas prontos). Dispara sozinho quando você pede algo novo. Um hook de edição avisa contraste, foco e layout no celular nos arquivos do Hallmark. Comando mais especial `/hallmark:hallmark <pedido>` (e `/hallmark:hallmark audit <pasta>`).
+* **design-better**: UX, com 50 heurísticas numeradas e as Laws of UX. O Claude puxa sozinho quando o assunto é tela. Comando mais especial `/design-better`. A linha de design no `CLAUDE.md` global divide o trabalho: Hallmark faz o visual, design-better cuida da UX.
+* **playwright-cli**: abre o navegador e confere a tela de verdade. O Claude puxa sozinho quando precisa ver uma página. Gasta menos token que o Playwright MCP. Comando mais especial `playwright-cli open <url>`.
 
-**Você precisa chamar:**
+**O Claude chama quando faz sentido (ou você chama):**
 * **code-review**: comando mais especial `/code-review:code-review`.
   Use dentro do repo, na branch de um pull request aberto no GitHub (precisa do `gh` logado).
   Com `--comment` no fim, a revisão vira comentário no PR.
   Atenção: `/code-review` sozinho é o revisor que já vem no Claude Code (revisa o diff local), não este plugin.
+
+**Uma vez por projeto:**
 * **graphify**: comando mais especial `/graphify .`, que monta o mapa da pasta atual.
-  Só precisa chamar na primeira vez. Depois disso, o Claude consulta o mapa sozinho.
+  O Claude só consulta o mapa sozinho depois de rodar `graphify claude install` uma vez em cada projeto (grava um bloco no `CLAUDE.md` do projeto).
+
+## O pack
+
+| Item | O que faz | Origem / instalação |
+|---|---|---|
+| ponytail | código mínimo | plugin `ponytail@ponytail` (marketplace DietrichGebert/ponytail) |
+| caveman | respostas curtas | plugin `caveman@caveman` (marketplace JuliusBrussee/caveman) |
+| superpowers | método: planejar, testar, depurar | plugin `superpowers@superpowers-marketplace` (marketplace obra/superpowers-marketplace) |
+| code-review | revisão de PR com vários agentes | plugin `code-review@claude-plugins-official` |
+| rtk | comprime saída de comandos | Ubuntu: script oficial; Windows: `winget` (`rtk-ai.rtk`) |
+| graphify | grafo de conhecimento | Ubuntu: `pipx install graphifyy`; Windows: `uv tool install graphifyy` |
+| hallmark | design visual (temas prontos) | plugin `hallmark@hallmark` (marketplace Nutlope/hallmark) + hook de edição |
+| design-better | UX: heurísticas e Laws of UX | skill do BuilderOS, via `npx skills add` (sem marketplace) |
+| playwright-cli | confere a tela no navegador | `npm i -g @playwright/cli` + skill (`playwright-cli install --skills`) |
+
+O superpowers vem do marketplace do autor, porque o oficial fixa a v7.0.0 e o do autor tem a última.
 
 ## Plugins
 
@@ -33,10 +58,10 @@ Pula o que já está instalado e desliga a telemetria do rtk.
 **caveman**: faz o agente responder curto, estilo "homem das cavernas", sem perder o conteúdo técnico.
 [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman)
 
-**superpowers**: conjunto de skills com um método de desenvolvimento (planejar, testar, revisar).
-[obra/superpowers](https://github.com/obra/superpowers)
+**superpowers**: conjunto de skills com um método de desenvolvimento (planejar, testar, depurar).
+[obra/superpowers](https://github.com/obra/superpowers) (marketplace [obra/superpowers-marketplace](https://github.com/obra/superpowers-marketplace))
 
-**code-review**: comando `/code-review` que revisa um PR com vários agentes em paralelo e filtra falsos positivos.
+**code-review**: comando `/code-review:code-review` que revisa um PR com vários agentes em paralelo e filtra falsos positivos.
 [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/code-review)
 
 **rtk**: proxy de linha de comando que comprime a saída de comandos comuns antes de chegar ao modelo.
@@ -45,20 +70,15 @@ Pula o que já está instalado e desliga a telemetria do rtk.
 **graphify**: skill `/graphify` que transforma uma pasta (código, docs, PDFs) num grafo de conhecimento consultável.
 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) (pacote PyPI `graphifyy`)
 
-**ux-design**: 11 skills de UX e UI baseadas em livros (Refactoring UI, iOS HIG, Don Norman, Hooked), incluindo a UX Heuristics (Krug + 10 heurísticas de Nielsen).
-[wondelai/skills](https://github.com/wondelai/skills)
+**hallmark**: único líder de design visual, com temas prontos, hook de edição que avisa contraste, foco e layout no celular, e checagem renderizada opcional (puppeteer-core + Chrome).
+[Nutlope/hallmark](https://github.com/Nutlope/hallmark)
 
-## Resumo
+**design-better**: skill de UX com 50 heurísticas numeradas e as Laws of UX.
+[BuildGreatProducts/builder-os](https://github.com/BuildGreatProducts/builder-os/tree/main/skills/design-better)
 
-| Nome | O que faz | Como instala / origem |
-|---|---|---|
-| ponytail | código mínimo | plugin `ponytail@ponytail` (marketplace DietrichGebert/ponytail) |
-| caveman | respostas curtas | plugin `caveman@caveman` (marketplace JuliusBrussee/caveman) |
-| superpowers | método de desenvolvimento | plugin `superpowers@claude-plugins-official` |
-| code-review | revisão de PR | plugin `code-review@claude-plugins-official` |
-| rtk | comprime saída de comandos | Ubuntu: script oficial; Windows: `winget` (`rtk-ai.rtk`) |
-| graphify | grafo de conhecimento | Ubuntu: `pipx install graphifyy`; Windows: `uv tool install graphifyy` |
-| ux-design | skills de UX e usabilidade | plugin `ux-design@wondelai-skills` (marketplace wondelai/skills) |
+**playwright-cli**: CLI + skill que abre o navegador e confere a tela de verdade, com menos token que o Playwright MCP.
+[microsoft/playwright-cli](https://github.com/microsoft/playwright-cli)
+
 
 ## Instalação
 
